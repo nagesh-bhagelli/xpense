@@ -11,6 +11,9 @@ import Signup from "./pages/auth/Signup";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ExpensesList from "./pages/expenses/ExpensesList";
 import AddExpense from "./pages/expenses/AddExpense";
+import EditExpense from "./pages/expenses/EditExpense";
+import Categories from "./pages/categories/Categories";
+import Income from "./pages/income/Income";
 import Placeholder from "./pages/Placeholder";
 import NotFound from "./pages/NotFound";
 
@@ -30,8 +33,11 @@ const App = () => (
               <Route path="/auth/login" element={<Login />} />
               <Route path="/auth/signup" element={<Signup />} />
               <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-              <Route path="/expenses" element={<ExpensesList />} />
-              <Route path="/expenses/add" element={<AddExpense />} />
+            <Route path="/expenses" element={<ExpensesList />} />
+            <Route path="/expenses/add" element={<AddExpense />} />
+            <Route path="/expenses/edit/:id" element={<EditExpense />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/income" element={<Income />} />
               <Route path="/budget" element={<Placeholder title="Budget" description="Budget management coming soon" />} />
               <Route path="/analytics" element={<Placeholder title="Analytics" description="Analytics dashboard coming soon" />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

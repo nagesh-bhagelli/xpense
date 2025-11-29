@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -21,10 +21,12 @@ import * as Icons from 'lucide-react';
 
 const PAYMENT_METHODS = ['Cash', 'Credit Card', 'Debit Card', 'Digital Wallet', 'Bank Transfer'];
 
-const AddExpense = () => {
+const EditExpense = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { id } = useParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const [formData, setFormData] = useState({
     amount: '',
@@ -32,6 +34,21 @@ const AddExpense = () => {
     expense_date: format(new Date(), 'yyyy-MM-dd'),
     description: '',
     payment_method: '',
+  });
+
+  const { data: expense, isLoading: expenseLoading } = useQuery({
+    queryKey: ['expense', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user && !!id,
   });
 
   const { data: categories } = useQuery({
@@ -49,12 +66,28 @@ const AddExpense = () => {
     enabled: !!user,
   });
 
-  if (loading) {
+  useEffect(() => {
+    if (expense) {
+      setFormData({
+        amount: expense.amount.toString(),
+        category: expense.category,
+        expense_date: expense.expense_date,
+        description: expense.description || '',
+        payment_method: expense.payment_method || '',
+      });
+    }
+  }, [expense]);
+
+  if (loading || expenseLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   if (!user) {
     return <Navigate to="/auth/login" />;
+  }
+
+  if (!expense) {
+    return <Navigate to="/expenses" />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,23 +101,49 @@ const AddExpense = () => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from('expenses').insert({
-        user_id: user.id,
-        amount: parseFloat(formData.amount),
-        category: formData.category,
-        expense_date: formData.expense_date,
-        description: formData.description || null,
-        payment_method: formData.payment_method || null,
-      });
+      const { error } = await supabase
+        .from('expenses')
+        .update({
+          amount: parseFloat(formData.amount),
+          category: formData.category,
+          expense_date: formData.expense_date,
+          description: formData.description || null,
+          payment_method: formData.payment_method || null,
+        })
+        .eq('id', id);
 
       if (error) throw error;
 
-      toast.success('Expense added successfully!');
+      toast.success('Expense updated successfully!');
       navigate('/expenses');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to add expense');
+      toast.error(error.message || 'Failed to update expense');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this expense?')) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Expense deleted successfully!');
+      navigate('/expenses');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete expense');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -92,7 +151,7 @@ const AddExpense = () => {
     <div className="container mx-auto p-6 max-w-2xl">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Add Expense</CardTitle>
+          <CardTitle className="text-2xl">Edit Expense</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -182,15 +241,23 @@ const AddExpense = () => {
 
             <div className="flex gap-3">
               <Button type="submit" disabled={isSubmitting} className="flex-1">
-                {isSubmitting ? 'Saving...' : 'Save Expense'}
+                {isSubmitting ? 'Updating...' : 'Update Expense'}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => navigate('/expenses')}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isDeleting}
               >
                 Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isSubmitting || isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
               </Button>
             </div>
           </form>
@@ -200,4 +267,4 @@ const AddExpense = () => {
   );
 };
 
-export default AddExpense;
+export default EditExpense;

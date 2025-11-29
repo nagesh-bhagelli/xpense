@@ -1,6 +1,7 @@
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +12,7 @@ import { User, LogOut } from 'lucide-react';
 
 export const Header = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="border-b border-border bg-card">
@@ -38,6 +40,13 @@ export const Header = () => {
                 Expenses
               </NavLink>
               <NavLink
+                to="/categories"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                activeClassName="text-primary"
+              >
+                Categories
+              </NavLink>
+              <NavLink
                 to="/budget"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 activeClassName="text-primary"
@@ -63,6 +72,13 @@ export const Header = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/income')}>
+                Income
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => signOut()}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
